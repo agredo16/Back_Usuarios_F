@@ -3,6 +3,7 @@ const config = require('../config/database');
 const validator = require('validator');
 const { validate: isEmail } = require('email-validator');
 
+// Middleware de autenticación
 const autenticar = (usuarioModel) => async (req, res, next) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
@@ -45,6 +46,7 @@ const autenticar = (usuarioModel) => async (req, res, next) => {
     }
 };
 
+// Middleware de verificación de roles
 const soloRoles = (rolesPermitidos = []) => {
     return (req, res, next) => {
         try {
@@ -52,7 +54,7 @@ const soloRoles = (rolesPermitidos = []) => {
             if (!usuario) {
                 return res.status(401).json({ error: 'Autenticación requerida' });
             }
-            
+
             // Excluir el rol de cliente
             if (usuario.rol === 'cliente') {
                 return res.status(403).json({
@@ -75,34 +77,37 @@ const soloRoles = (rolesPermitidos = []) => {
     };
 };
 
+// Middleware de verificación de permisos
 const verificarPermisos = (permisosRequeridos = []) => {
-  return async (req, res, next) => {
-      try {
-          if (req.usuario.rol === 'super_admin') {
-              return next();         }
-          
-          const permisos = req.usuario.permisos || [];
-          const permisosQueFaltan = permisosRequeridos.filter(
-              permiso => !permisos.includes(permiso)
-          );
+    return async (req, res, next) => {
+        try {
+            if (req.usuario.rol === 'super_admin') {
+                return next();
+            }
 
-          if (permisosQueFaltan.length > 0) {
-              return res.status(403).json({
-                  error: 'Acceso denegado',
-                  detalles: `No tiene los siguientes permisos requeridos: ${permisosQueFaltan.join(', ')}`
-              });
-          }
+            const permisos = req.usuario.permisos || [];
+            const permisosQueFaltan = permisosRequeridos.filter(
+                permiso => !permisos.includes(permiso)
+            );
 
-          next();
-      } catch (error) {
-          return res.status(500).json({ 
-              error: 'Error al verificar permisos', 
-              detalles: error.message 
-          });
-      }
-  };
+            if (permisosQueFaltan.length > 0) {
+                return res.status(403).json({
+                    error: 'Acceso denegado',
+                    detalles: `No tiene los siguientes permisos requeridos: ${permisosQueFaltan.join(', ')}`
+                });
+            }
+
+            next();
+        } catch (error) {
+            return res.status(500).json({ 
+                error: 'Error al verificar permisos', 
+                detalles: error.message 
+            });
+        }
+    };
 };
 
+// Middleware de logging
 const loggin = (req, res, next) => {
     const fecha = new Date().toISOString();
     const metodo = req.method;
@@ -118,6 +123,7 @@ const loggin = (req, res, next) => {
     next();
 };
 
+// Middleware de manejo de errores
 const manejarErrores = (err, _req, res, next) => {
     console.error('Error en la aplicación:', err);
     if (err.statusCode) {
@@ -144,14 +150,17 @@ const manejarErrores = (err, _req, res, next) => {
         detalles: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 };
+
+// Middleware de validación de datos de cliente
 const verificarDatosCliente = (req, res, next) => {
-  if (req.usuario?.rol.nombre === 'cliente' && !req.body.razonSocial) {
-      return res.status(400).json({
-          error: 'Razón social es requerida para clientes'
-      });
-  }
-  next();
+    if (req.usuario?.rol.nombre === 'cliente' && !req.body.razonSocial) {
+        return res.status(400).json({
+            error: 'Razón social es requerida para clientes'
+        });
+    }
+    next();
 };
+
 module.exports = {
     autenticar,
     verificarPermisos,
