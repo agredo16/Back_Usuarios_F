@@ -39,7 +39,7 @@ const usuarioSchema = new mongoose.Schema({
         nombre: {
             type: String,
             required: true,
-            enum: ['super_admin', 'administrador', 'laboratorista','cliente'],
+            enum: ['super_admin', 'administrador', 'laboratorista', 'cliente'],
         },
         permisos: [String]
     },
@@ -55,11 +55,10 @@ const usuarioSchema = new mongoose.Schema({
                 return this.rol.nombre === 'cliente';
             }
         },
+        // Se elimina la validación de 'required' para razonSocial,
+        // de modo que solo se agregue cuando se envíe un valor desde el front-end.
         razonSocial: {
-            type: String,
-            required: function() {
-                return this.rol.nombre === 'cliente';
-            }
+            type: String
         },
         especialidad: String,
         nivelAcceso: Number,
@@ -177,17 +176,21 @@ usuarioSchema.statics.obtenerPermisosPorTipo = function(tipo) {
 usuarioSchema.statics.obtenerPorEmail = async function(email) {
     return await this.findOne({ email }).exec();
 };
+
 usuarioSchema.statics.obtenerPorId = async function(id) {
     return await this.findById(id).exec();
 };
+
 usuarioSchema.statics.obtenerTodos = async function() {
     return await this.find({ activo: true })
         .select('-password -detalles')
         .exec();
 };
+
 usuarioSchema.statics.contarUsuarios = async function() {
     return await this.countDocuments({ activo: true });
 };
+
 usuarioSchema.statics.crear = async function(datos) {
     try {
         const nuevoUsuario = new this(datos);
@@ -196,6 +199,7 @@ usuarioSchema.statics.crear = async function(datos) {
         throw new Error(`Error al crear usuario: ${error.message}`);
     }
 };
+
 usuarioSchema.statics.actualizarUsuario = async function(id, datosActualizados, usuarioActual) {
     try {
         if (!ObjectId.isValid(id)) {
@@ -231,6 +235,7 @@ usuarioSchema.statics.actualizarUsuario = async function(id, datosActualizados, 
         throw new Error(`Error al actualizar usuario: ${error.message}`);
     }
 };
+
 usuarioSchema.statics.generarTokenRecuperacion = async function(email) {
     const usuario = await this.findOne({ email });
     if (!usuario) {
@@ -257,6 +262,7 @@ usuarioSchema.statics.generarTokenRecuperacion = async function(email) {
         nombre: usuario.nombre
     };
 };
+
 const Usuario = mongoose.model('Usuario', usuarioSchema);
 
 module.exports = Usuario;
