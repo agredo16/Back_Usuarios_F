@@ -247,25 +247,45 @@ async registrar(req, res) {
           });
       }
   }
+  async actualizarEstado(req, res) {
+    try {
+        const { id } = req.params;
+        const { activo } = req.body; // Se espera { activo: true } o { activo: false }
 
-    async desactivarUsuario(req, res) {
-        try {
-            const { id } = req.params;
-            const resultado = await this.usuarioModel.actualizarUsuario(
-                id,
-                { activo: false },
-                req.usuario
-            );
+        const resultado = await this.usuarioModel.actualizarUsuario(
+            id,
+            { activo },
+            req.usuario
+        );
 
-            if (resultado.matchedCount === 0) {
-                return res.status(404).json({ error: 'Usuario no encontrado' });
-            }
-
-            res.status(200).json({ mensaje: 'Usuario desactivado exitosamente' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
+        if (!resultado) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
         }
+
+        res.status(200).json({ mensaje: `Usuario ${activo ? 'activado' : 'desactivado'} exitosamente` });
+    } catch (error) {
+        res.status(500).json({ error: 'Error en el servidor', detalles: error.message });
     }
+  }
+
+  async desactivarUsuario(req, res) {
+    try {
+        const { id } = req.params;
+        const resultado = await this.usuarioModel.actualizarUsuario(
+            id,
+            { activo: false },
+            req.usuario
+        );
+
+        if (resultado.matchedCount === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        res.status(200).json({ mensaje: 'Usuario desactivado exitosamente' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
 
     async solicitarRecuperacion(req, res) {
         try {
