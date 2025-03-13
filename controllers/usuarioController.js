@@ -102,6 +102,12 @@ async registrar(req, res) {
                   ...datosEspecificos
               };
               break;
+             case 'cliente':
+    nuevoUsuario.detalles = {
+      tipo: "cliente",
+      razonSocial: datosEspecificos?.razonSocial || ""
+    };
+    break;
       }
 
       const resultado = await this.usuarioModel.crear(nuevoUsuario);
