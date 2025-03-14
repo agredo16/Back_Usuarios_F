@@ -22,12 +22,11 @@ async function migrarRoles() {
         name: 'administrador',
         permisos: [
           'ver_usuarios',
-          'crear_usuarios',
+          'crear_clientes',
           'editar_usuarios',
-          'eliminar_usuarios',
           'gestionar_laboratoristas',
           'gestionar_clientes',
-          'crear_laboratoristas' // Agregado si lo necesitas
+          'crear_laboratoristas' 
         ],
         description: 'Gestiona usuarios y tiene acceso a la mayoría de funciones administrativas.'
       },

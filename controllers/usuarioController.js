@@ -22,9 +22,9 @@ class UsuarioController {
             ],
             administrador: [
                 'ver_usuarios',
-                'crear_usuarios',
+                'crear_laboratoristas',
+                'crear_clientes',
                 'editar_usuarios',
-                'eliminar_usuarios',
                 'gestionar_laboratoristas',
                 'gestionar_clientes'
             ],

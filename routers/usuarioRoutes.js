@@ -11,6 +11,29 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
 
     router.post('/registro', autenticarMiddleware, async (req, res, next) => {
         try {
+            const rolAutenticado = req.usuario.rol; // Se espera que sea una cadena (por ejemplo, "super_admin", "administrador", etc.)
+    
+            if (rolAutenticado === 'super_admin' && req.body.tipo !== 'administrador') {
+                return res.status(403).json({
+                    error: 'Acceso denegado',
+                    detalles: 'El super admin solo puede crear administradores'
+                });
+            }
+    
+            if (rolAutenticado === 'administrador' && !['laboratorista', 'cliente'].includes(req.body.tipo)) {
+                return res.status(403).json({
+                    error: 'Acceso denegado',
+                    detalles: 'El administrador solo puede crear laboratoristas o clientes'
+                });
+            }
+    
+            if (rolAutenticado === 'laboratorista') {
+                return res.status(403).json({
+                    error: 'Acceso denegado',
+                    detalles: 'El laboratorista no tiene permisos para crear usuarios'
+                });
+            }
+    
             const totalUsuarios = await usuarioModel.contarUsuarios();
             if (totalUsuarios === 0) {
                 if (req.body.tipo !== 'super_admin') {
@@ -20,20 +43,13 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
                 }
                 return controller.registrar(req, res);
             }
-
-            const permisosRequeridos = {
-                laboratorista: ['crear_laboratoristas'],
-                administrador: ['crear_usuarios', 'crear_administradores'],
-                cliente: ['gestionar_clientes']
-            }[req.body.tipo];
-
-            return verificarPermisos(permisosRequeridos)(req, res, () => 
-                controller.registrar(req, res)
-            );
+    
+            return controller.registrar(req, res);
         } catch (error) {
             next(error);
         }
     });
+    
 
     router.post('/solicitar-recuperacion', (req, res) => 
         controller.solicitarRecuperacion(req, res)
