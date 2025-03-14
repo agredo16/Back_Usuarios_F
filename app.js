@@ -87,7 +87,7 @@ async function iniciarServidor() {
         await connectDB();
         console.log('Conectado a Mongodb');
         
-        await Usuario.inicializarRoles();
+       // await Usuario.inicializarRoles();
         const autenticarMiddleware = autenticar(Usuario);
         
         // Rutas protegidas

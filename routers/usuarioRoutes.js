@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { autenticar, verificarPermisos, loggin, manejarErrores } = require('../middlewares/middleware');
+const { autenticar,verificarPermisos,loggin,manejarErrores } = require('../middlewares/middleware');
 const Usuario = require('../models/Usuario');
 
 module.exports = (autenticarMiddleware, usuarioModel) => {
@@ -65,9 +65,9 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
             permisos: ['eliminar_usuarios', 'eliminar_laboratoristas'] 
         },
         { 
-            path: '/:id/estado', 
+            path: '/:id/desactivar', 
             method: 'put', 
-            handler: 'actualizarEstado',
+            handler: 'desactivarUsuario',
             permisos: ['desactivar_usuarios'] 
         }
     ];

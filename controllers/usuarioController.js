@@ -37,97 +37,104 @@ class UsuarioController {
         return permisos[tipo] || [];
     }
 
-async registrar(req, res) {
-  try {
-      const { email, password, nombre, tipo, documento, telefono, direccion, ...datosEspecificos } = req.body;
-      
-      if (!tipo || !['super_admin', 'administrador', 'laboratorista','cliente'].includes(tipo)) {
-          return res.status(400).json({
+    async registrar(req, res) {
+        try {
+          const { email, password, nombre, tipo, documento, telefono, direccion, ...datosEspecificos } = req.body;
+            
+          if (!tipo || !['super_admin', 'administrador', 'laboratorista', 'cliente'].includes(tipo)) {
+            return res.status(400).json({
               error: 'Tipo de usuario inválido',
-              detalles: 'Los tipos permitidos son: super_admin, administrador, laboratorista'
-          });
-      }
-
-      const totalUsuarios = await this.usuarioModel.contarUsuarios();
-      if (totalUsuarios === 0) {
-          if (tipo !== 'super_admin') {
-              return res.status(400).json({
-                  error: 'El primer usuario debe ser un super administrador'
-              });
+              detalles: 'Los tipos permitidos son: super_admin, administrador, laboratorista, cliente'
+            });
           }
-      }
-
-      const existente = await this.usuarioModel.obtenerPorEmail(email);
-      if (existente) {
-          return res.status(400).json({
+      
+          const totalUsuarios = await this.usuarioModel.contarUsuarios();
+          if (totalUsuarios === 0) {
+            if (tipo !== 'super_admin') {
+              return res.status(400).json({
+                error: 'El primer usuario debe ser un super administrador'
+              });
+            }
+          }
+      
+          const existente = await this.usuarioModel.obtenerPorEmail(email);
+          if (existente) {
+            return res.status(400).json({
               error: 'Email ya registrado',
               detalles: 'El email proporcionado ya está en uso'
-          });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const nuevoUsuario = {
-          email,
-          password: hashedPassword,
-          nombre,
-          documento,
-          telefono,
-          direccion,
-          fechaCreacion: new Date(),
-          activo: true,
-          rol: {
-              nombre: tipo,
-              permisos: await this.obtenerPermisosPorTipo(tipo)
-          },
-          detalles: {}
-      };
-
-      switch (tipo) {
-          case 'laboratorista':
+            });
+          }
+      
+          const hashedPassword = await bcrypt.hash(password, 10);
+      
+          // Buscar el rol correspondiente en la colección de roles
+          const Role = require('../models/Role');
+          const rolEncontrado = await Role.findOne({ name: tipo });
+          if (!rolEncontrado) {
+            return res.status(400).json({ error: 'Rol no encontrado' });
+          }
+      
+          // Construir el nuevo usuario asignándole el ObjectId del rol
+          const nuevoUsuario = {
+            email,
+            password: hashedPassword,
+            nombre,
+            documento,
+            telefono,
+            direccion,
+            fechaCreacion: new Date(),
+            activo: true,
+            rol: rolEncontrado._id,  // Referencia al rol encontrado
+            detalles: {}
+          };
+      
+          switch (tipo) {
+            case 'laboratorista':
               nuevoUsuario.detalles = {
-                  especialidad: datosEspecificos?.especialidad || '',
-                  ...datosEspecificos
+                especialidad: datosEspecificos?.especialidad || '',
+                ...datosEspecificos
               };
               break;
-          case 'administrador':
+            case 'administrador':
               nuevoUsuario.detalles = {
-                  nivelAcceso: datosEspecificos?.nivelAcceso || 1,
-                  ...datosEspecificos
+                nivelAcceso: datosEspecificos?.nivelAcceso || 1,
+                ...datosEspecificos
               };
               break;
-          case 'super_admin':
+            case 'super_admin':
               nuevoUsuario.detalles = {
-                  codigoSeguridad: datosEspecificos?.codigoSeguridad,
-                  registroAcciones: [],
-                  ...datosEspecificos
+                codigoSeguridad: datosEspecificos?.codigoSeguridad,
+                registroAcciones: [],
+                ...datosEspecificos
               };
               break;
-             case 'cliente':
-    nuevoUsuario.detalles = {
-      tipo: "cliente",
-      razonSocial: datosEspecificos?.razonSocial || ""
-    };
-    break;
-      }
-
-      const resultado = await this.usuarioModel.crear(nuevoUsuario);
-      return res.status(201).json({
-          mensaje: 'Usuario creado exitosamente',
-          usuario: {
+            case 'cliente':
+              nuevoUsuario.detalles = {
+                tipo: "cliente",
+                razonSocial: datosEspecificos?.razonSocial || ""
+              };
+              break;
+          }
+      
+          const resultado = await this.usuarioModel.crear(nuevoUsuario);
+          return res.status(201).json({
+            mensaje: 'Usuario creado exitosamente',
+            usuario: {
               _id: resultado.insertedId,
               email,
               nombre,
               tipo
-          }
-      });
-  } catch (error) {
-      console.error('Error en el registro:', error);
-      res.status(500).json({ 
-          error: 'Error en el servidor', 
-          detalles: error.message 
-      });
-  }
-}
+            }
+          });
+        } catch (error) {
+          console.error('Error en el registro:', error);
+          res.status(500).json({ 
+            error: 'Error en el servidor', 
+            detalles: error.message 
+          });
+        }
+      }
+      
 
     async login(req, res) {
         try {
