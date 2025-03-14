@@ -4,6 +4,7 @@ const Usuario = require('../models/Usuario');
 const emailService = require('../service/emailService');
 const config = require('../config/database');
 const EmailService = require('../service/emailService');
+const Role = require('../models/Role');
 
 class UsuarioController {
     constructor(usuarioModel) {
@@ -140,7 +141,8 @@ class UsuarioController {
         try {
             const { email, password } = req.body;
             const usuario = await this.usuarioModel.obtenerPorEmail(email);
-            
+            console.log('Usuario obtenido:', usuario);
+
             if (!usuario) {
                 return res.status(400).json({
                     error: 'Credenciales inválidas',
@@ -167,7 +169,7 @@ class UsuarioController {
                 userId: usuario._id,
                 email: usuario.email,
                 nombre: usuario.nombre,
-                rol: usuario.rol.nombre,
+                rol: usuario.rol.name,
                 permisos: usuario.rol.permisos || []
             };
 
@@ -179,7 +181,7 @@ class UsuarioController {
                     _id: usuario._id,
                     nombre: usuario.nombre,
                     email: usuario.email,
-                    rol: usuario.rol.nombre,
+                    rol: usuario.rol.name,
                     permisos: usuario.rol.permisos || []
                 }
             });

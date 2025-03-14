@@ -1,6 +1,8 @@
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
 const uri = process.env.MONGODB_URI;
+const Role = require('../models/Role');
+
 
 async function migrarRoles() {
   const client = new MongoClient(uri);

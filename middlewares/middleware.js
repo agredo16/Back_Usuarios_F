@@ -17,7 +17,7 @@ const autenticar = (usuarioModel) => async (req, res, next) => {
         const decodificado = jwt.verify(token, config.jwtConfig.secret);
         req.usuario = decodificado;
 
-        const usuario = await usuarioModel.findById(decodificado.userId);
+        const usuario = await usuarioModel.findById(decodificado.userId).populate('rol');
         if (!usuario || !usuario.activo) {
             return res.status(401).json({
                 error: 'Usuario no autorizado',
