@@ -106,7 +106,6 @@ const verificarPermisos = (permisosRequeridos = []) => {
     };
 };
 
-// Middleware de logging
 const loggin = (req, res, next) => {
     const fecha = new Date().toISOString();
     const metodo = req.method;
@@ -122,7 +121,6 @@ const loggin = (req, res, next) => {
     next();
 };
 
-// Middleware de manejo de errores
 const manejarErrores = (err, _req, res, next) => {
     console.error('Error en la aplicación:', err);
     if (err.statusCode) {
@@ -150,7 +148,6 @@ const manejarErrores = (err, _req, res, next) => {
     });
 };
 
-// Middleware de validación de datos de cliente
 const verificarDatosCliente = (req, res, next) => {
     if (req.usuario?.rol === 'cliente' && !req.body.razonSocial) {
         return res.status(400).json({

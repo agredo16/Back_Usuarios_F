@@ -368,48 +368,60 @@ class UsuarioController {
             });
         }
     }
-    async cambiarContrasena(req, res) {
-      try {
-          const { token, password } = req.body;
-  
-          if (!token || !password) {
-              return res.status(400).json({
-                  error: "Faltan datos",
-                  detalles: "Token y nueva contraseña son requeridos"
-              });
-          }
-  
-          const usuario = await this.usuarioModel.validarTokenRecuperacion(token);
-  
-          if (!usuario) {
-              return res.status(400).json({
-                  error: "Token inválido o expirado",
-                  detalles: "El token no es válido o ya ha sido usado"
-              });
-          }
-  
-          const passwordEncriptada = await bcrypt.hash(password, 10);
-  
-          const resultado = await this.usuarioModel.actualizarContrasena(usuario.id, passwordEncriptada);
-  
-          if (!resultado.success) {
-              return res.status(400).json({
-                  error: "No se pudo actualizar la contraseña",
-                  detalles: resultado.message
-              });
-          }
-  
-          return res.status(200).json({
-              mensaje: "Contraseña actualizada con éxito",
-              success: true
-          });
-      } catch (error) {
-          return res.status(500).json({
-              error: "Error interno del servidor",
-              detalles: error.message
+async cambiarContrasena(req, res) {
+  try {
+      const { token, password } = req.body;
+      if (!token || !password) {
+          return res.status(400).json({
+              error: "Faltan datos",
+              detalles: "Token y nueva contraseña son requeridos"
           });
       }
+
+      if (!this.validarFortalezaContraseña(password)) {
+          return res.status(400).json({
+              error: "Contraseña débil",
+              detalles: "La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, un número y un caracter especial"
+          });
+      }
+
+      const usuario = await this.usuarioModel.validarTokenRecuperacion(token);
+      if (!usuario) {
+          return res.status(400).json({
+              error: "Token inválido o expirado",
+              detalles: "El token no es válido o ya ha sido usado"
+          });
+      }
+
+      const passwordEncriptada = await bcrypt.hash(password, 10);
+      const resultado = await this.usuarioModel.actualizarContrasena(usuario.id, passwordEncriptada);
+
+      if (!resultado.success) {
+          return res.status(400).json({
+              error: "No se pudo actualizar la contraseña",
+              detalles: resultado.message
+          });
+      }
+
+      await this.emailService.enviarEmailConfirmacion(
+          usuario.email,
+          usuario.nombre,
+          'contraseña_actualizada'
+      );
+
+      return res.status(200).json({
+          mensaje: "Contraseña actualizada con éxito",
+          success: true
+      });
+
+  } catch (error) {
+      console.error('Error en el cambio de contraseña:', error);
+      return res.status(500).json({
+          error: "Error interno del servidor",
+          detalles: error.message
+      });
   }
+}
   
 }
 
