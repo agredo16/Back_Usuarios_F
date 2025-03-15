@@ -78,8 +78,6 @@ usuarioSchema.pre('findOneAndUpdate', function(next) {
   next();
 });
 
-// Se asume que, cuando se consulta un usuario, se usa .populate('rol')
-// para tener acceso a rol.name y rol.permisos en los métodos
 usuarioSchema.methods.tienePermiso = async function(permiso) {
   if (!this.rol) return false;
   if (this.rol.name === 'super_admin') return true;

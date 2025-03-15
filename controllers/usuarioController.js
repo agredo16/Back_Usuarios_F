@@ -69,14 +69,12 @@ class UsuarioController {
       
           const hashedPassword = await bcrypt.hash(password, 10);
       
-          // Buscar el rol correspondiente en la colección de roles
           const Role = require('../models/Role');
           const rolEncontrado = await Role.findOne({ name: tipo });
           if (!rolEncontrado) {
             return res.status(400).json({ error: 'Rol no encontrado' });
           }
       
-          // Construir el nuevo usuario asignándole el ObjectId del rol
           const nuevoUsuario = {
             email,
             password: hashedPassword,
@@ -86,7 +84,7 @@ class UsuarioController {
             direccion,
             fechaCreacion: new Date(),
             activo: true,
-            rol: rolEncontrado._id,  // Referencia al rol encontrado
+            rol: rolEncontrado._id, 
             detalles: {}
           };
       
@@ -222,7 +220,6 @@ class UsuarioController {
           });
           const usuarioActual = req.usuario;
           
-          // Verificar si el usuario autenticado tiene permiso para modificar al usuario objetivo
           const puedeModificar = await this.usuarioModel.puedeModificarUsuario(req.params.id);
           if (!puedeModificar) {
             return res.status(403).json({
@@ -231,17 +228,38 @@ class UsuarioController {
             });
           }
           
-          const { password, tipo, ...datosActualizados } = req.body;
+          const { password, tipo, rol, ...datosActualizados } = req.body;
       
           if (password) {
             datosActualizados.password = await bcrypt.hash(password, 10);
           }
       
-          // Si se intenta modificar el tipo y el usuario autenticado no es super_admin, se rechaza
           if (tipo && usuarioActual.rol !== 'super_admin') {
             return res.status(403).json({
               error: 'No tiene permisos para modificar el tipo de usuario'
             });
+          }
+
+          if (rol && usuarioActual.rol !== 'super_admin') {
+            return res.status(403).json({
+              error: 'No tiene permisos para modificar el rol del usuario'
+            });
+          }
+
+          if (rol) {
+            try {
+              const Role = require('../models/Role');
+              const rolEncontrado = await Role.findOne({ name: rol });
+              if (!rolEncontrado) {
+                return res.status(400).json({ error: 'Rol no encontrado' });
+              }
+              datosActualizados.rol = rolEncontrado._id;
+            } catch (error) {
+              return res.status(500).json({ 
+                error: 'Error al buscar el rol',
+                detalles: error.message 
+              });
+            }
           }
       
           const resultado = await this.usuarioModel.actualizarUsuario(
