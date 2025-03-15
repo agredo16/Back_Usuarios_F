@@ -86,30 +86,6 @@ usuarioSchema.methods.tienePermiso = async function(permiso) {
   return this.rol.permisos.includes(permiso);
 };
 
-usuarioSchema.methods.puedeModificarUsuario = async function(usuarioObjetivoId) {
-  if (!ObjectId.isValid(usuarioObjetivoId)) {
-    throw new Error('ID de usuario no válido');
-  }
-
-  if (this._id.toString() === usuarioObjetivoId.toString()) {
-    return true;
-  }
-
-  const usuarioObjetivo = await this.constructor.findById(usuarioObjetivoId).populate('rol');
-  if (!usuarioObjetivo) {
-    return false;
-  }
-
-  if (this.rol.name === 'super_admin') {
-    return true;
-  }
-
-  if (this.rol.name === 'administrador') {
-    return ['laboratorista'].includes(usuarioObjetivo.rol.name);
-  }
-
-  return false;
-};
 
 usuarioSchema.statics.obtenerPorEmail = async function(email) {
   return await this.findOne({ email }).populate('rol').exec();
