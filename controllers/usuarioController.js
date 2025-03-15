@@ -13,6 +13,11 @@ class UsuarioController {
         console.log('UsuarioController inicializado con modelo:', this.usuarioModel);
     }
 
+    alidarFortalezaContraseña(password) {
+      const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      return regex.test(password);
+  }
+
     obtenerPermisosPorTipo(tipo) {
         const permisos = {
             super_admin: [
@@ -66,6 +71,12 @@ class UsuarioController {
               detalles: 'El email proporcionado ya está en uso'
             });
           }
+          if (!this.validarFortalezaContraseña(password)) {
+            return res.status(400).json({
+                error: 'Contraseña débil',
+                detalles: 'La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, un número y un caracter especial'
+            });
+        }
       
           const hashedPassword = await bcrypt.hash(password, 10);
       
@@ -378,7 +389,7 @@ async cambiarContrasena(req, res) {
           });
       }
 
-      if (!this.validarFortalezaContraseña(password)) {
+      if (!this.validarFortalezaContraseña?.(password)) {
           return res.status(400).json({
               error: "Contraseña débil",
               detalles: "La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, un número y un caracter especial"
