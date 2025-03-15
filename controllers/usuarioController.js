@@ -218,6 +218,14 @@ class UsuarioController {
             usuario: req.usuario,
             id: req.params.id
           });
+          
+          console.log('Campos específicos a actualizar:', {
+            nombre: req.body.nombre,
+            documento: req.body.documento,
+            telefono: req.body.telefono,
+            email: req.body.email,
+            rol: req.body.rol
+          });
           const usuarioActual = req.usuario;
           
           const puedeModificar = await this.usuarioModel.puedeModificarUsuario(req.params.id);
@@ -262,12 +270,24 @@ class UsuarioController {
             }
           }
       
+          console.log('Datos que se enviarán para actualización:', datosActualizados);
+          
           const resultado = await this.usuarioModel.actualizarUsuario(
             req.params.id,
             datosActualizados,
             usuarioActual
           );
-          const usuarioActualizado = await this.usuarioModel.findById(resultado._id).populate('rol');
+          
+          console.log('Resultado de la actualización:', resultado);
+          
+          const usuarioActualizado = await this.usuarioModel.obtenerPorId(req.params.id);
+          
+          if (!usuarioActualizado) {
+            return res.status(404).json({
+              error: 'Usuario no encontrado después de la actualización',
+              detalles: 'No se pudo recuperar la información actualizada'
+            });
+          }
 
           res.status(200).json({
             mensaje: 'Usuario actualizado exitosamente',
@@ -275,7 +295,14 @@ class UsuarioController {
               _id: usuarioActualizado._id,
               email: usuarioActualizado.email,
               nombre: usuarioActualizado.nombre,
-              tipo: usuarioActualizado.rol.name
+              documento: usuarioActualizado.documento,
+              telefono: usuarioActualizado.telefono,
+              tipo: usuarioActualizado.rol.name,
+              rol: {
+                id: usuarioActualizado.rol._id,
+                nombre: usuarioActualizado.rol.name
+              },
+              activo: usuarioActualizado.activo
             }
           });
       
