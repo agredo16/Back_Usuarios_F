@@ -13,7 +13,7 @@ class UsuarioController {
         console.log('UsuarioController inicializado con modelo:', this.usuarioModel);
     }
 
-    alidarFortalezaContraseña(password) {
+    validarFortalezaContraseña(password) {
       const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
       return regex.test(password);
   }
