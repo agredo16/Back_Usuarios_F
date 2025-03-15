@@ -54,6 +54,9 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
     router.post('/solicitar-recuperacion', (req, res) => 
         controller.solicitarRecuperacion(req, res)
     );
+    router.post('/cambiar-contrasena', (req, res) => 
+        controller.cambiarContrasena(req, res)
+    ); 
 
     const rutasAutenticadas = [
         { 
@@ -86,6 +89,7 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
             handler: 'actualizarEstado',
             permisos: ['desactivar_usuarios'] 
         }
+        
     ];
 
     rutasAutenticadas.forEach(ruta => {
