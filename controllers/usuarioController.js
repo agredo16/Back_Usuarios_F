@@ -249,14 +249,15 @@ class UsuarioController {
             datosActualizados,
             usuarioActual
           );
-      
+          const usuarioActualizado = await this.usuarioModel.findById(resultado._id).populate('rol');
+
           res.status(200).json({
             mensaje: 'Usuario actualizado exitosamente',
             usuario: {
-              _id: resultado._id,
-              email: resultado.email,
-              nombre: resultado.nombre,
-              tipo: resultado.rol.nombre
+              _id: usuarioActualizado._id,
+              email: usuarioActualizado.email,
+              nombre: usuarioActualizado.nombre,
+              tipo: usuarioActualizado.rol.name
             }
           });
       
