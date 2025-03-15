@@ -198,11 +198,9 @@ usuarioSchema.statics.generarTokenRecuperacion = async function(email) {
   };
 };
 usuarioSchema.statics.inicializarRoles = async function() {
-    const Role = require('./Role'); // Asegúrate de que la ruta sea correcta
-    // Verificar si existen usuarios con rol asignado
+    const Role = require('./Role');
     const usuariosExistentes = await this.countDocuments({ rol: { $exists: true } });
     if (usuariosExistentes === 0) {
-      // Buscar el rol super_admin en la colección de roles
       const rolSuperAdmin = await Role.findOne({ name: 'super_admin' });
       if (!rolSuperAdmin) {
         throw new Error('No se encontró el rol super_admin en la colección de roles');

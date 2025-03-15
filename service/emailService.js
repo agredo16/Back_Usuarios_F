@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 class EmailService {
   constructor() {
     this.validateEnvironmentVariables();
-    
+
     this.transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: parseInt(process.env.EMAIL_PORT),
@@ -28,9 +28,7 @@ class EmailService {
       'FRONTEND_URL'
     ];
 
-    const missingVars = requiredVars.filter(varName => 
-      !process.env[varName]
-    );
+    const missingVars = requiredVars.filter(varName => !process.env[varName]);
 
     if (missingVars.length > 0) {
       throw new Error(`Variables de entorno faltantes: ${missingVars.join(', ')}`);
@@ -39,8 +37,12 @@ class EmailService {
 
   async enviarEmailRecuperacion(destinatario, token, nombreUsuario) {
     try {
-      const urlRecuperacion = `${process.env.FRONTEND_URL}/restablecer-password?token=${token}`;
-      
+      // Asegurarse de que FRONTEND_URL no tenga una barra final
+      const baseUrl = process.env.FRONTEND_URL.endsWith('/') 
+        ? process.env.FRONTEND_URL.slice(0, -1) 
+        : process.env.FRONTEND_URL;
+      const urlRecuperacion = `${baseUrl}/restablecer-password?token=${encodeURIComponent(token)}`;
+
       const mailOptions = {
         from: `"Sistema de Laboratorio" <${process.env.EMAIL_USER}>`,
         to: destinatario,
@@ -76,8 +78,7 @@ class EmailService {
                 <p>Hemos recibido tu solicitud para restablecer tu contraseña.</p>
                 <p><a href="${urlRecuperacion}" class="button">Restablecer Contraseña</a></p>
                 <p>Si no has solicitado este cambio, por favor ignora este mensaje.</p>
-                <p>Saludos cordiales,<br>
-                   Sistema de Laboratorio</p>
+                <p>Saludos cordiales,<br>Sistema de Laboratorio</p>
               </div>
             </body>
           </html>

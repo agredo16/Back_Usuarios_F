@@ -55,7 +55,6 @@ const soloRoles = (rolesPermitidos = []) => {
                 return res.status(401).json({ error: 'Autenticación requerida' });
             }
 
-            // Excluir el rol de cliente
             if (usuario.rol === 'cliente') {
                 return res.status(403).json({
                     error: 'Acceso denegado',

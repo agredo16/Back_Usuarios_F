@@ -11,7 +11,7 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
 
     router.post('/registro', autenticarMiddleware, async (req, res, next) => {
         try {
-            const rolAutenticado = req.usuario.rol; // Se espera que sea una cadena (por ejemplo, "super_admin", "administrador", etc.)
+            const rolAutenticado = req.usuario.rol; 
     
             if (rolAutenticado === 'super_admin' && req.body.tipo !== 'administrador') {
                 return res.status(403).json({

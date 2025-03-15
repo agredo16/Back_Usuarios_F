@@ -11,7 +11,6 @@ async function migrarRoles() {
     const db = client.db();
     const rolesCollection = db.collection('roles');
 
-    // Inserta o actualiza cada rol
     const roles = [
       {
         name: 'super_admin',
