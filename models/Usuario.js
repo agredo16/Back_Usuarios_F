@@ -171,6 +171,32 @@ usuarioSchema.statics.actualizarUsuario = async function(id, datosActualizados, 
   }
 };
 
+usuarioSchema.methods.puedeModificarUsuario = async function(usuarioObjetivoId) {
+  if (!ObjectId.isValid(usuarioObjetivoId)) {
+    throw new Error('ID de usuario no válido');
+  }
+
+  if (this._id.toString() === usuarioObjetivoId.toString()) {
+    return true;
+  }
+
+  const usuarioObjetivo = await this.constructor.findById(usuarioObjetivoId).populate('rol');
+  if (!usuarioObjetivo) {
+    return false;
+  }
+
+  if (this.rol.name === 'super_admin') {
+    return usuarioObjetivo.rol.name === 'administrador';
+  }
+
+  if (this.rol.name === 'administrador') {
+    return ['laboratorista', 'cliente'].includes(usuarioObjetivo.rol.name);
+  }
+
+  return false;
+};
+
+
 usuarioSchema.statics.generarTokenRecuperacion = async function(email) {
   const usuario = await this.findOne({ email }).populate('rol');
   if (!usuario) {

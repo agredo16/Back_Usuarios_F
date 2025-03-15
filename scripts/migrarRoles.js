@@ -23,7 +23,8 @@ async function migrarRoles() {
         permisos: [
           'ver_usuarios',
           'crear_clientes',
-          'editar_usuarios',
+          'editar_clientes',
+          'editar_laboratoristas',
           'gestionar_laboratoristas',
           'gestionar_clientes',
           'crear_laboratoristas' 

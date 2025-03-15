@@ -24,7 +24,8 @@ class UsuarioController {
                 'ver_usuarios',
                 'crear_laboratoristas',
                 'crear_clientes',
-                'editar_usuarios',
+                'editar_clientes',
+                'editar_laboratoristas',
                 'gestionar_laboratoristas',
                 'gestionar_clientes'
             ],
@@ -213,49 +214,61 @@ class UsuarioController {
     }
 
     async actualizar(req, res) {
-      try {
-        console.log('Datos recibidos en el controlador:', {
-          body: req.body,
-          usuario: req.usuario,
-          id: req.params.id
-      });
-          const usuarioActual = req.usuario;
-          const { password, tipo, ...datosActualizados } = req.body;
-  
-          if (password) {
-              datosActualizados.password = await bcrypt.hash(password, 10);
-          }
-  
-          if (tipo && usuarioActual.rol !== 'super_admin') {
-              return res.status(403).json({
-                  error: 'No tiene permisos para modificar el tipo de usuario'
-              });
-          }
-  
-          const resultado = await this.usuarioModel.actualizarUsuario(
-              req.params.id,
-              datosActualizados,
-              usuarioActual
-          );
-  
-          res.status(200).json({
-              mensaje: 'Usuario actualizado exitosamente',
-              usuario: {
-                  _id: resultado._id,
-                  email: resultado.email,
-                  nombre: resultado.nombre,
-                  tipo: resultado.rol.nombre
-              }
+        try {
+          console.log('Datos recibidos en el controlador:', {
+            body: req.body,
+            usuario: req.usuario,
+            id: req.params.id
           });
-  
-      } catch (error) {
+          const usuarioActual = req.usuario;
+          
+          // Verificar si el usuario autenticado tiene permiso para modificar al usuario objetivo
+          const puedeModificar = await this.usuarioModel.puedeModificarUsuario(req.params.id);
+          if (!puedeModificar) {
+            return res.status(403).json({
+              error: 'Acceso denegado',
+              detalles: 'No tiene permisos para modificar este usuario'
+            });
+          }
+          
+          const { password, tipo, ...datosActualizados } = req.body;
+      
+          if (password) {
+            datosActualizados.password = await bcrypt.hash(password, 10);
+          }
+      
+          // Si se intenta modificar el tipo y el usuario autenticado no es super_admin, se rechaza
+          if (tipo && usuarioActual.rol !== 'super_admin') {
+            return res.status(403).json({
+              error: 'No tiene permisos para modificar el tipo de usuario'
+            });
+          }
+      
+          const resultado = await this.usuarioModel.actualizarUsuario(
+            req.params.id,
+            datosActualizados,
+            usuarioActual
+          );
+      
+          res.status(200).json({
+            mensaje: 'Usuario actualizado exitosamente',
+            usuario: {
+              _id: resultado._id,
+              email: resultado.email,
+              nombre: resultado.nombre,
+              tipo: resultado.rol.nombre
+            }
+          });
+      
+        } catch (error) {
           console.error('Error en la actualización:', error);
           res.status(500).json({ 
-              error: 'Error en el servidor', 
-              detalles: error.message 
+            error: 'Error en el servidor', 
+            detalles: error.message 
           });
+        }
       }
-  }
+      
   async actualizarEstado(req, res) {
     try {
         const { id } = req.params;
