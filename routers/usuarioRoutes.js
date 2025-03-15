@@ -81,9 +81,9 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
             permisos: ['eliminar_usuarios', 'eliminar_laboratoristas'] 
         },
         { 
-            path: '/:id/desactivar', 
+            path: '/:id/estado',  
             method: 'put', 
-            handler: 'desactivarUsuario',
+            handler: 'actualizarEstado',
             permisos: ['desactivar_usuarios'] 
         }
     ];

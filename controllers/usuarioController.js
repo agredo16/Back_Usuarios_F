@@ -259,20 +259,25 @@ class UsuarioController {
   async actualizarEstado(req, res) {
     try {
         const { id } = req.params;
-        const { activo } = req.body; // Se espera { activo: true } o { activo: false }
-
+        console.log("actualizarEstado - req.params.id:", id);
+        const { activo } = req.body;
+        console.log("actualizarEstado - req.body:", req.body);
+  
         const resultado = await this.usuarioModel.actualizarUsuario(
             id,
             { activo },
             req.usuario
         );
-
+        console.log("actualizarEstado - resultado de actualizarUsuario:", resultado);
+        
         if (!resultado) {
+            console.log("actualizarEstado - Usuario no encontrado para id:", id);
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
-
+  
         res.status(200).json({ mensaje: `Usuario ${activo ? 'activado' : 'desactivado'} exitosamente` });
     } catch (error) {
+        console.error("actualizarEstado - Error:", error);
         res.status(500).json({ error: 'Error en el servidor', detalles: error.message });
     }
   }
