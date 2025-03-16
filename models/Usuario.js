@@ -70,7 +70,7 @@ const usuarioSchema = new mongoose.Schema({
     immutable: true
   },
   fechaActualizacion: Date,
-  
+
   tokenRecuperacion: {
     token: {
       type: String,
@@ -227,6 +227,19 @@ usuarioSchema.statics.validarTokenRecuperacion = async function(token) {
   await usuario.save();
   
   return usuario;
+};
+
+usuarioSchema.statics.actualizarContrasena = async function(userId, newHashedPassword) {
+  try {
+    const updatedUser = await this.findByIdAndUpdate(
+      userId,
+      { password: newHashedPassword },
+      { new: true, runValidators: true }
+    );
+    return { success: true, user: updatedUser };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
 };
 usuarioSchema.statics.inicializarRoles = async function() {
     const Role = require('./Role');
