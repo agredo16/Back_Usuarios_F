@@ -414,12 +414,6 @@ async cambiarContrasena(req, res) {
           });
       }
 
-      await this.emailService.enviarEmailConfirmacion(
-          usuario.email,
-          usuario.nombre,
-          'contraseña_actualizada'
-      );
-
       return res.status(200).json({
           mensaje: "Contraseña actualizada con éxito",
           success: true
