@@ -69,7 +69,22 @@ const usuarioSchema = new mongoose.Schema({
     default: Date.now,
     immutable: true
   },
-  fechaActualizacion: Date
+  fechaActualizacion: Date,
+  
+  tokenRecuperacion: {
+    token: {
+      type: String,
+      default: null
+    },
+    expiracion: {
+      type: Date,
+      default: null
+    },
+    intentos: {
+      type: Number,
+      default: 0
+    }
+  }
 });
 
 usuarioSchema.pre('findOneAndUpdate', function(next) {
@@ -196,6 +211,22 @@ usuarioSchema.statics.generarTokenRecuperacion = async function(email) {
     token: token,
     nombre: usuario.nombre
   };
+};
+
+usuarioSchema.statics.validarTokenRecuperacion = async function(token) {
+  const usuario = await this.findOne({ 
+      'tokenRecuperacion.token': token,
+      'tokenRecuperacion.expiracion': { $gt: new Date() }
+  });
+  
+  if (!usuario) {
+      return null;
+  }
+  
+  usuario.tokenRecuperacion = undefined;
+  await usuario.save();
+  
+  return usuario;
 };
 usuarioSchema.statics.inicializarRoles = async function() {
     const Role = require('./Role');
