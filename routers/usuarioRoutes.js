@@ -4,10 +4,15 @@ const { autenticar,verificarPermisos,loggin,manejarErrores } = require('../middl
 const Usuario = require('../models/Usuario');
 
 module.exports = (autenticarMiddleware, usuarioModel) => {
+
     const UsuarioController = require('../controllers/usuarioController');
     const controller = new UsuarioController(usuarioModel);
 
     router.post('/login', (req, res) => controller.login(req, res));
+    
+    router.get('/roles', (req, res, next) => {
+        controller.obtenerRoles(req, res, next);
+    });
 
     router.post('/registro', autenticarMiddleware, async (req, res, next) => {
         try {
@@ -91,11 +96,11 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
         }
         
     ];
-    router.get('/roles', autenticarMiddleware, (req, res, next) => {
+   /* router.get('/roles', autenticarMiddleware, (req, res, next) => {
         verificarPermisos(['ver_usuarios'])(req, res, () => {
             controller.obtenerRoles(req, res, next);
         });
-    });
+    });*/
 
     rutasAutenticadas.forEach(ruta => {
         router[ruta.method](ruta.path, autenticarMiddleware, (req, res, next) => {
