@@ -264,6 +264,13 @@ usuarioSchema.statics.inicializarRoles = async function() {
     }
   };
 
+  usuarioSchema.statics.obtenerRoles = async function() {
+    return await this.find({ activo: true })
+      .select('_id rol')
+      .populate('rol', '_id name')
+      .exec();
+  };
+
 const Usuario = mongoose.model('Usuario', usuarioSchema);
 
 module.exports = Usuario;

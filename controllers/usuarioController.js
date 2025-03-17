@@ -47,7 +47,16 @@ class UsuarioController {
     async registrar(req, res) {
         try {
           const { email, password, nombre, tipo, documento, telefono, direccion, ...datosEspecificos } = req.body;
-            
+          
+          if (req.params.id) {
+            if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+                return res.status(400).json({
+                    error: 'ID inválido',
+                    detalles: 'El ID proporcionado no es un ObjectId válido'
+                });
+            }
+        }  
+
           if (!tipo || !['super_admin', 'administrador', 'laboratorista', 'cliente'].includes(tipo)) {
             return res.status(400).json({
               error: 'Tipo de usuario inválido',
@@ -426,7 +435,19 @@ async cambiarContrasena(req, res) {
           detalles: error.message
       });
   }
+
 }
+
+async obtenerRoles(_req, res) {
+  try {
+    const roles = await this.usuarioModel.obtenerRoles();
+    res.status(200).json(roles);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+
   
 }
 

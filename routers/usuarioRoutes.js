@@ -91,6 +91,11 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
         }
         
     ];
+    router.get('/roles', autenticarMiddleware, (req, res, next) => {
+        verificarPermisos(['ver_usuarios'])(req, res, () => {
+            controller.obtenerRoles(req, res, next);
+        });
+    });
 
     rutasAutenticadas.forEach(ruta => {
         router[ruta.method](ruta.path, autenticarMiddleware, (req, res, next) => {
