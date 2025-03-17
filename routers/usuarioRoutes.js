@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { autenticar,verificarPermisos,loggin,manejarErrores } = require('../middlewares/middleware');
 const Usuario = require('../models/Usuario');
+const UsuarioController=require("../controllers/usuarioController")
 
 module.exports = (autenticarMiddleware, usuarioModel) => {
 
@@ -9,11 +10,8 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
     const controller = new UsuarioController(usuarioModel);
 
     router.post('/login', (req, res) => controller.login(req, res));
-    
-    router.get('/roles', (req, res, next) => {
-        controller.obtenerRoles(req, res, next);
-    });
 
+    router.get("/roles/:id", controller.obtenerRoles.bind(controller));    
     router.post('/registro', autenticarMiddleware, async (req, res, next) => {
         try {
             const rolAutenticado = req.usuario.rol; 

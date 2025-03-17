@@ -34,7 +34,6 @@ const usuarioSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  // Aquí se define el rol como una referencia al modelo Role
   rol: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Role',
@@ -45,11 +44,9 @@ const usuarioSchema = new mongoose.Schema({
     default: true
   },
   detalles: {
-    // Estos campos adicionales se mantienen según el tipo de usuario
     tipo: {
       type: String,
       enum: ['cliente']
-      // no se especifica required, se define desde el front si es necesario
     },
     razonSocial: {
       type: String
@@ -264,10 +261,10 @@ usuarioSchema.statics.inicializarRoles = async function() {
     }
   };
 
-  usuarioSchema.statics.obtenerRoles = async function() {
+  usuarioSchema.statics.obtenerRoles = async function () {
     return await this.find({ activo: true })
-      .select('_id rol')
-      .populate('rol', '_id name')
+      .select('_id tipo')
+      .populate('tipo', '_id name') 
       .exec();
   };
 

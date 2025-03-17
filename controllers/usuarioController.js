@@ -438,17 +438,26 @@ async cambiarContrasena(req, res) {
 
 }
 
-async obtenerRoles(_req, res) {
+async obtenerRoles(req, res) {
   try {
-    const roles = await this.usuarioModel.obtenerRoles();
-    res.status(200).json(roles);
+      const { id } = req.params;  
+
+      if (!id) {
+          return res.status(400).json({ error: 'Se requiere un ID de usuario' });
+      }
+
+      const usuario = await Usuario.findById(id).populate("rol")
+
+      if (!usuario) {
+          return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+
+      res.status(200).json({ rol: usuario.rol });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message });
   }
 }
 
-
   
 }
-
 module.exports = UsuarioController;
