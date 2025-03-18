@@ -446,13 +446,16 @@ async obtenerRoles(req, res) {
           return res.status(400).json({ error: 'Se requiere un ID de usuario' });
       }
 
-      const usuario = await Usuario.findById(id).populate("rol")
+      const usuario = await Usuario.findById(id).populate("rol","_id name");
 
       if (!usuario) {
           return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
-      res.status(200).json({ rol: usuario.rol });
+      const usuarioObj = usuario.toObject();
+      delete usuarioObj.password;
+
+     return res.status(200).json(usuarioObj);
   } catch (error) {
       res.status(500).json({ error: error.message });
   }
