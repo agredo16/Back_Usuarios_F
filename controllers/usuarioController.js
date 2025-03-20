@@ -461,6 +461,16 @@ async obtenerRoles(req, res) {
   }
 }
 
+async obtenerDatosBasicos(req, res) {
+  try {
+    const usuarios = await this.usuarioModel.obtenerDatosBasicos();
+    res.status(200).json(usuarios);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+
   
 }
 module.exports = UsuarioController;

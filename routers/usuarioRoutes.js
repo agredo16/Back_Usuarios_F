@@ -10,9 +10,12 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
     const controller = new UsuarioController(usuarioModel);
 
     router.post('/login', (req, res) => controller.login(req, res));
+    router.get('/datos-basicos', (req, res) => controller.obtenerDatosBasicos(req, res));
 
     router.get("/roles/:id", controller.obtenerRoles.bind(controller));    
     router.post('/registro', autenticarMiddleware, async (req, res, next) => {
+   
+       
         try {
             const rolAutenticado = req.usuario.rol; 
     
