@@ -269,9 +269,8 @@ usuarioSchema.statics.inicializarRoles = async function() {
       .exec();
   };
 
-  usuarioSchema.statics.obtenerDatosBasicos = async function() {
-    return await this.find({})
-      .select('documento nombre rol')        
+  usuarioSchema.statics.buscarPorDocumento = async function(documento) {
+    return await this.findOne({ documento })
       .populate('rol', '_id name')
       .exec();
   };

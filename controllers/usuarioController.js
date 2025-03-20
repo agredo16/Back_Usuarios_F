@@ -461,10 +461,24 @@ async obtenerRoles(req, res) {
   }
 }
 
-async obtenerDatosBasicos(req, res) {
+async buscarPorDocumento(req, res) {
   try {
-    const usuarios = await this.usuarioModel.obtenerDatosBasicos();
-    res.status(200).json(usuarios);
+    const { documento } = req.query;
+    
+    if (!documento) {
+      return res.status(400).json({ error: 'Se requiere un número de documento para la búsqueda' });
+    }
+
+    const usuario = await Usuario.findOne({ documento }).populate('rol', '_id name');
+
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const usuarioObj = usuario.toObject();
+    delete usuarioObj.password;
+
+    res.status(200).json(usuarioObj);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
