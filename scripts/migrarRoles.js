@@ -33,6 +33,7 @@ async function migrarRoles() {
       {
         name: 'laboratorista',
         permisos: [
+          'ver_usuarios',
           'perfil_propio',
           'gestionar_pruebas',
           'ver_resultados',

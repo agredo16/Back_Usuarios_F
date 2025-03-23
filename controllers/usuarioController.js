@@ -35,6 +35,7 @@ class UsuarioController {
                 'gestionar_clientes'
             ],
             laboratorista: [
+               'ver_usuarios',
                 'perfil_propio',
                 'gestionar_pruebas',
                 'ver_resultados',
