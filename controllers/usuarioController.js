@@ -470,7 +470,7 @@ async buscarPorDocumento(req, res) {
       return res.status(400).json({ error: 'Se requiere un número de documento para la búsqueda' });
     }
 
-    const usuario = await Usuario.buscarPorDocumento(documento);
+    const usuario = await Usuario.findOne({ documento }).populate('rol', '_id name');
 
     if (!usuario) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -488,6 +488,9 @@ async buscarPorDocumento(req, res) {
     res.status(500).json({ error: error.message });
   }
 }
+
+
+
   
 }
 module.exports = UsuarioController;
