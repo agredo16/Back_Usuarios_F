@@ -80,7 +80,7 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
             path: '/:id', 
             method: 'put', 
             handler: 'actualizar',
-            permisos: ['editar_usuarios',"editar_clientes","editar_laboratoristas", 'perfil_propio'] 
+            permisos: ["editar_clientes","editar_laboratoristas", 'perfil_propio'] 
         },
         { 
             path: '/:id', 

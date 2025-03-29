@@ -84,6 +84,14 @@ const verificarPermisos = (permisosRequeridos = []) => {
                 return next();
             }
 
+            const rolUsuario = req.usuario.rol?.name;
+            if(!['administrador'].includes(rolUsuario)){
+                return res.status(403).json({
+                    error:'Acceso denegado',
+                    detalles: 'Solo administradores y super_admin pueden editar'
+                });
+            }
+
             const permisos = req.usuario.permisos || [];
             const permisosQueFaltan = permisosRequeridos.filter(
                 permiso => !permisos.includes(permiso)
