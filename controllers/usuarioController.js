@@ -470,10 +470,14 @@ async buscarPorDocumento(req, res) {
       return res.status(400).json({ error: 'Se requiere un número de documento para la búsqueda' });
     }
 
-    const usuario = await Usuario.findOne({ documento }).populate('rol', '_id name');
+    const usuario = await Usuario.buscarPorDocumento(documento);
 
     if (!usuario) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    
+    if (usuario.rol.name.toLowerCase() !== 'cliente') {
+      return res.status(403).json({ error: 'Acceso denegado, solo se permite la búsqueda de clientes' });
     }
 
     const usuarioObj = usuario.toObject();
@@ -484,8 +488,6 @@ async buscarPorDocumento(req, res) {
     res.status(500).json({ error: error.message });
   }
 }
-
-
   
 }
 module.exports = UsuarioController;
