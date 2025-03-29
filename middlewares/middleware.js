@@ -46,7 +46,6 @@ const autenticar = (usuarioModel) => async (req, res, next) => {
     }
 };
 
-// Middleware de verificación de roles
 const soloRoles = (rolesPermitidos = []) => {
     return (req, res, next) => {
         try {

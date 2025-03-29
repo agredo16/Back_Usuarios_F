@@ -172,16 +172,20 @@ usuarioSchema.methods.puedeModificarUsuario = async function(usuarioObjetivoId) 
     return false;
   }
 
-  if (this.rol.name === 'super_admin') {
-    return usuarioObjetivo.rol.name === 'administrador';
+  const miRol = this.rol.name.toLowerCase();
+  const rolObjetivo = usuarioObjetivo.rol.name.toLowerCase();
+
+  if (miRol === 'super_admin') {
+    return rolObjetivo === 'administrador';
   }
 
-  if (this.rol.name === 'administrador') {
-    return ['laboratorista', 'cliente'].includes(usuarioObjetivo.rol.name);
+  if (miRol === 'administrador') {
+    return rolObjetivo === 'cliente' || rolObjetivo === 'laboratorista';
   }
 
   return false;
 };
+
 
 
 usuarioSchema.statics.generarTokenRecuperacion = async function(email) {
