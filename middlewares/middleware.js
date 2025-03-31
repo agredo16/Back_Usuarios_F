@@ -17,12 +17,47 @@ const autenticar = (usuarioModel) => async (req, res, next) => {
         const decodificado = jwt.verify(token, config.jwtConfig.secret);
         req.usuario = decodificado;
 
-        const usuario = await usuarioModel.findById(decodificado.userId).populate('rol');
+        const usuario = await usuarioModel.findById(decodificado.userId)
+            .populate('rol')
+            .exec();
+
         if (!usuario || !usuario.activo) {
             return res.status(401).json({
                 error: 'Usuario no autorizado',
                 detalles: 'Usuario no encontrado o inactivo'
             });
+        }
+
+        // Modificación para permitir que super_admin edite administradores
+        // y administrador edite clientes y laboratoristas
+        const usuarioObjetivoId = req.params?.id;
+        if (usuarioObjetivoId) {
+            const usuarioObjetivo = await usuarioModel.findById(usuarioObjetivoId)
+                .populate('rol')
+                .exec();
+
+            if (!usuarioObjetivo) {
+                return res.status(404).json({
+                    error: 'Usuario no encontrado'
+                });
+            }
+
+            // Verificar permisos de edición
+            if (usuario.rol.name === 'super_admin') {
+                if (usuarioObjetivo.rol.name !== 'administrador') {
+                    return res.status(403).json({
+                        error: 'Acceso denegado',
+                        detalles: 'El super administrador solo puede editar administradores'
+                    });
+                }
+            } else if (usuario.rol.name === 'administrador') {
+                if (!['cliente', 'laboratorista'].includes(usuarioObjetivo.rol.name)) {
+                    return res.status(403).json({
+                        error: 'Acceso denegado',
+                        detalles: 'El administrador solo puede editar clientes y laboratoristas'
+                    });
+                }
+            }
         }
 
         next();

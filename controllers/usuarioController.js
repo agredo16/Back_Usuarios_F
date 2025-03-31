@@ -234,79 +234,59 @@ class UsuarioController {
 
     async actualizar(req, res) {
       try {
-          const usuarioActualDB = await this.usuarioModel.findById(req.usuario.userId).populate('rol');
-          if (!usuarioActualDB) {
-              return res.status(401).json({
-                  error: 'Usuario no autorizado',
-                  detalles: 'Usuario no encontrado'
-              });
-          }
-  
-          const usuarioObjetivo = await this.usuarioModel.findById(req.params.id).populate('rol');
-          if (!usuarioObjetivo) {
-              return res.status(404).json({ error: 'Usuario no encontrado' });
-          }
-  
-          const puedeEditar = await this.verificarPermisosEdicion(
-              usuarioActualDB.rol.name,
-              usuarioObjetivo.rol.name
-          );
-  
-          if (!puedeEditar) {
-              return res.status(403).json({
-                  error: 'Acceso denegado',
-                  detalles: 'No tiene permisos para modificar este usuario'
-              });
-          }
-  
-          const { password, tipo, rol, ...datosActualizados } = req.body;
-          if (password) {
-              datosActualizados.password = await bcrypt.hash(password, 10);
-          }
-  
-          if (tipo && usuarioActualDB.rol.name !== 'super_admin') {
-              return res.status(403).json({
-                  error: 'No tiene permisos para modificar el tipo de usuario'
-              });
-          }
-  
-          if (rol && usuarioActualDB.rol.name !== 'super_admin') {
-              return res.status(403).json({
-                  error: 'No tiene permisos para modificar el rol del usuario'
-              });
-          }
-  
-          const resultado = await this.usuarioModel.actualizarUsuario(
-              req.params.id,
-              datosActualizados,
-              req.usuario
-          );
-  
-          const usuarioActualizado = await this.usuarioModel.findById(resultado._id).populate('rol');
-          res.status(200).json({
-              mensaje: 'Usuario actualizado exitosamente',
-              usuario: {
-                  _id: usuarioActualizado._id,
-                  email: usuarioActualizado.email,
-                  nombre: usuarioActualizado.nombre,
-                  documento: usuarioActualizado.documento,
-                  telefono: usuarioActualizado.telefono,
-                  tipo: usuarioActualizado.rol.name,
-                  rol: {
-                      id: usuarioActualizado.rol._id,
-                      nombre: usuarioActualizado.rol.name
-                  },
-                  activo: usuarioActualizado.activo
-              }
-          });
-      } catch (error) {
-          console.error('Error en la actualización:', error);
-          res.status(500).json({
-              error: 'Error en el servidor',
-              detalles: error.message
-          });
-      }
-  }
+        const usuarioActualDB = await Usuario.findById(req.usuario.userId).populate('rol');
+        if (!usuarioActualDB) {
+            return res.status(401).json({
+                error: 'Usuario no autorizado',
+                detalles: 'Usuario no encontrado'
+            });
+        }
+
+        const usuarioObjetivo = await Usuario.findById(req.params.id).populate('rol');
+        if (!usuarioObjetivo) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        // Verificar permisos
+        if (!verificarPermisosEdicion(usuarioActualDB, usuarioObjetivo)) {
+            return res.status(403).json({
+                error: 'Acceso denegado',
+                detalles: 'No tiene permisos para modificar este usuario'
+            });
+        }
+
+        const { password, ...datosActualizados } = req.body;
+        if (password) {
+            datosActualizados.password = await bcrypt.hash(password, 10);
+        }
+
+        const resultado = await Usuario.findByIdAndUpdate(
+            req.params.id,
+            datosActualizados,
+            { new: true }
+        );
+
+        return res.status(200).json({
+            mensaje: 'Usuario actualizado exitosamente',
+            usuario: {
+                _id: resultado._id,
+                email: resultado.email,
+                nombre: resultado.nombre,
+                tipo: resultado.rol.name,
+                rol: {
+                    id: resultado.rol._id,
+                    nombre: resultado.rol.name
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error en la actualización:', error);
+        res.status(500).json({
+            error: 'Error en el servidor',
+            detalles: error.message
+        });
+    }
+};
   
   async verificarPermisosEdicion(rolActual, rolObjetivo) {
       if (rolActual === 'super_admin') {
