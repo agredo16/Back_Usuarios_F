@@ -125,36 +125,33 @@ usuarioSchema.statics.crear = async function(datos) {
   }
 };
 
+// En el modelo (usuarioModel.js)
 usuarioSchema.statics.actualizarUsuario = async function(id, datosActualizados, usuarioActual) {
   try {
-    if (!ObjectId.isValid(id)) {
-      throw new Error('ID de usuario inválido');
-    }
-
-    const usuario = await this.findById(id).populate('rol');
-    if (!usuario) {
-      throw new Error('Usuario no encontrado');
-    }
-
-    if (datosActualizados._id) {
-      throw new Error('No se puede modificar el ID del usuario');
-    }
-
-    if (usuario._id.toString() !== usuarioActual.userId.toString() &&
-        usuarioActual.rol !== 'super_admin') {
-      throw new Error('No tiene permisos para modificar este usuario');
-    }
-
-    const resultado = await this.findByIdAndUpdate(
-      id,
-      datosActualizados,
-      { new: true, runValidators: true }
-    );
-
-    return resultado;
+      if (!ObjectId.isValid(id)) {
+          throw new Error('ID de usuario inválido');
+      }
+      
+      const usuario = await this.findById(id).populate('rol');
+      if (!usuario) {
+          throw new Error('Usuario no encontrado');
+      }
+      
+      // Verificar permisos en el modelo
+      const puedeEditar = await usuarioActual.rol.tienePermiso('editar_usuarios');
+      if (!puedeEditar) {
+          throw new Error('No tiene permisos para modificar este usuario');
+      }
+      
+      const resultado = await this.findByIdAndUpdate(
+          id,
+          datosActualizados,
+          { new: true, runValidators: true }
+      );
+      
+      return resultado;
   } catch (error) {
-    console.error('Error al actualizar usuario:', error);
-    throw new Error(`Error al actualizar usuario: ${error.message}`);
+      throw new Error(`Error al actualizar usuario: ${error.message}`);
   }
 };
 
