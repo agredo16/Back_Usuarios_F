@@ -18,7 +18,7 @@ const roleSchema = new mongoose.Schema({
 });
 
 roleSchema.methods.tienePermiso = function(permiso) {
-  return this.rol.permisos.includes(permiso);
+  return this.permisos.includes(permiso);
 };
 
 
