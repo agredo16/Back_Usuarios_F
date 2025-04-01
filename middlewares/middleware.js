@@ -25,6 +25,7 @@ const autenticar = (usuarioModel) => async (req, res, next) => {
                     detalles: 'Usuario no encontrado o inactivo'
                 });
             }
+            usuario.permisos = usuario.rol?.permisos || [];
         req.usuario = usuario;
         next();
     }catch (error){
@@ -81,7 +82,7 @@ const soloRoles = (rolesPermitidos = []) => {
 const verificarPermisos = (permisosRequeridos = []) => {
     return async (req, res, next) => {
         try {
-            if (req.usuario.rol === 'super_admin') {
+            if (req.usuario.rol?.name === 'super_admin') {
                 return next();
             }
 
