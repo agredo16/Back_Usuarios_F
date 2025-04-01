@@ -90,11 +90,6 @@ usuarioSchema.pre('findOneAndUpdate', function(next) {
   next();
 });
 
-usuarioSchema.methods.tienePermiso = async function(permiso) {
-  if (!this.rol) return false;
-  if (this.rol.name === 'super_admin') return true;
-  return this.rol.permisos.includes(permiso);
-};
 
 
 usuarioSchema.statics.obtenerPorEmail = async function(email) {

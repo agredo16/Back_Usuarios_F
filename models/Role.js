@@ -17,4 +17,9 @@ const roleSchema = new mongoose.Schema({
   }
 });
 
+roleSchema.methods.tienePermiso = function(permiso) {
+  return this.rol.permisos.includes(permiso);
+};
+
+
 module.exports = mongoose.model('Role', roleSchema);
