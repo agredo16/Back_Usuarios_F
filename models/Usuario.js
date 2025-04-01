@@ -133,7 +133,7 @@ usuarioSchema.statics.actualizarUsuario = async function(id, datosActualizados, 
       }
       
       // Verificar permisos en el modelo
-      const puedeEditar = await usuarioActual.rol.tienePermiso('editar_usuarios');
+      const puedeEditar = await usuarioActual.rol.tienePermiso('desactivar_usuarios');
       if (!puedeEditar) {
           throw new Error('No tiene permisos para modificar este usuario');
       }

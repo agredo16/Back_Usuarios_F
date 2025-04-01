@@ -328,7 +328,7 @@ class UsuarioController {
         const { id } = req.params;
         console.log("actualizarEstado - req.params.id:", id);
         const { activo } = req.body;
-        console.log("actualizarEstado - req.body:", req.body);
+        console.log("actualizarEstado - usuario autenticado:", req.usuario);
   
         const resultado = await this.usuarioModel.actualizarUsuario(
             id,
