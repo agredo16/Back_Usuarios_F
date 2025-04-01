@@ -242,41 +242,63 @@ class UsuarioController {
             });
         }
 
-        const usuarioObjetivo = await Usuario.findById(req.params.id).populate('rol');
+        const usuarioObjetivo = await this.usuarioModel.findById(req.params.id).populate('rol');
         if (!usuarioObjetivo) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
 
         // Verificar permisos
-        if (!verificarPermisosEdicion(usuarioActualDB, usuarioObjetivo)) {
+        const miRol = usuarioActualDB.rol.name.toLowerCase();
+        const rolObjetivo = usuarioObjetivo.rol.name.toLowerCase();
+
+        if (miRol === 'super_admin'){
+          if (rolObjetivo !== 'administrador'){
             return res.status(403).json({
-                error: 'Acceso denegado',
-                detalles: 'No tiene permisos para modificar este usuario'
+              error: 'Acceso denegado',
+              detalles: 'El super administrador solo puede editar administradores'
             });
-        }
+          }
+        } else if (miRol === 'administrador'){
+          if (!['cliente','laboratorista'].includes(rolObjetivo)){
+            return res.status(403).json({
+              error: 'Acceso denegado',
+              detalles: 'El administrador solo puede editar clientes y laboratoristas'
+            });
+          }
+          }else {
+            return res.status(403).json({
+              error: 'Acceso denegado',
+              detalles: 'No tiene permisos para modificar este usuario'
+            });
+          }
 
         const { password, ...datosActualizados } = req.body;
         if (password) {
             datosActualizados.password = await bcrypt.hash(password, 10);
         }
 
-        const resultado = await Usuario.findByIdAndUpdate(
+        const resultado = await this.usuarioModel.actualizarUsuario(
             req.params.id,
             datosActualizados,
-            { new: true }
+            req.usuario
         );
 
-        return res.status(200).json({
+        const usuarioActualizado = await this.usuarioModel.findById(resultado._id).populate('rol');
+
+        res.status(200).json({
             mensaje: 'Usuario actualizado exitosamente',
             usuario: {
-                _id: resultado._id,
-                email: resultado.email,
-                nombre: resultado.nombre,
-                tipo: resultado.rol.name,
+                _id: usuarioActualizado._id,
+                email: usuarioActualizado.email,
+                nombre: usuarioActualizado.nombre,
+                documento:usuarioActualizado.documento,
+                telefono: usuarioActualizado.telefono,
+                tipo: usuarioActualizado.rol.name,
                 rol: {
-                    id: resultado.rol._id,
-                    nombre: resultado.rol.name
-                }
+                    id: usuarioActualizado.rol._id,
+                    nombre: usuarioActualizado.rol.name
+                },
+                activo: usuarioActualizado.activo
             }
         });
     } catch (error) {
@@ -286,7 +308,7 @@ class UsuarioController {
             detalles: error.message
         });
     }
-};
+}
   
   async verificarPermisosEdicion(rolActual, rolObjetivo) {
       if (rolActual === 'super_admin') {

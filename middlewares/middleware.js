@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config/database');
 const validator = require('validator');
 const { validate: isEmail } = require('email-validator');
+const { json } = require('express');
 
 // Middleware de autenticación
 const autenticar = (usuarioModel) => async (req, res, next) => {
@@ -15,70 +16,36 @@ const autenticar = (usuarioModel) => async (req, res, next) => {
         }
 
         const decodificado = jwt.verify(token, config.jwtConfig.secret);
-        req.usuario = decodificado;
-
         const usuario = await usuarioModel.findById(decodificado.userId)
             .populate('rol')
             .exec();
-
-        if (!usuario || !usuario.activo) {
-            return res.status(401).json({
-                error: 'Usuario no autorizado',
-                detalles: 'Usuario no encontrado o inactivo'
-            });
-        }
-
-        // Modificación para permitir que super_admin edite administradores
-        // y administrador edite clientes y laboratoristas
-        const usuarioObjetivoId = req.params?.id;
-        if (usuarioObjetivoId) {
-            const usuarioObjetivo = await usuarioModel.findById(usuarioObjetivoId)
-                .populate('rol')
-                .exec();
-
-            if (!usuarioObjetivo) {
-                return res.status(404).json({
-                    error: 'Usuario no encontrado'
+            if (!usuario || !usuario.activo) {
+                return res.status(401).json({
+                    error: 'Usuario no autorizado',
+                    detalles: 'Usuario no encontrado o inactivo'
                 });
             }
-
-            // Verificar permisos de edición
-            if (usuario.rol.name === 'super_admin') {
-                if (usuarioObjetivo.rol.name !== 'administrador') {
-                    return res.status(403).json({
-                        error: 'Acceso denegado',
-                        detalles: 'El super administrador solo puede editar administradores'
-                    });
-                }
-            } else if (usuario.rol.name === 'administrador') {
-                if (!['cliente', 'laboratorista'].includes(usuarioObjetivo.rol.name)) {
-                    return res.status(403).json({
-                        error: 'Acceso denegado',
-                        detalles: 'El administrador solo puede editar clientes y laboratoristas'
-                    });
-                }
-            }
-        }
-
+        req.usuario = usuario;
         next();
-    } catch (error) {
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                error: 'Sesión expirada',
-                detalles: 'Por favor, inicie sesión nuevamente'
+    }catch (error){
+        if (error.name === 'TokenExpiredError'){
+            return res.status(401).join({
+                error: 'Sesion expirada',
+                detalles: 'Por favor, inicie sesion nuevamente '
             });
         }
-        if (error.name === 'JsonWebTokenError') {
+        if (error.name ==='JsonWebTokenError'){
             return res.status(401).json({
-                error: 'Token inválido',
-                detalles: 'El token proporcionado no es válido'
+                error: 'Token invalido',
+                detalles: 'El token proporcionado no es valido'
             });
         }
         return res.status(401).json({
-            error: 'Error en la autenticación',
+            error: 'Error de autenticacion',
             detalles: error.message
         });
     }
+  
 };
 
 const soloRoles = (rolesPermitidos = []) => {
