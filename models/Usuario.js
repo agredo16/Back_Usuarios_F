@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { ObjectId } = require("mongodb");
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const path = require('path');
 
 const usuarioSchema = new mongoose.Schema({
   email: {
@@ -97,7 +98,7 @@ usuarioSchema.statics.obtenerPorEmail = async function(email) {
 };
 
 usuarioSchema.statics.obtenerPorId = async function(id) {
-  return await this.findById(id).populate('rol').exec();
+  return await this.findById(id).populate('rol');
 };
 
 usuarioSchema.statics.obtenerTodos = async function() {
@@ -123,30 +124,28 @@ usuarioSchema.statics.crear = async function(datos) {
 // En el modelo (usuarioModel.js)
 usuarioSchema.statics.actualizarUsuario = async function(id, datosActualizados, usuarioActual) {
   try {
-      if (!ObjectId.isValid(id)) {
+      // Validar que id sea un ObjectId válido
+      if (!mongoose.Types.ObjectId.isValid(id)) {
           throw new Error('ID de usuario inválido');
       }
       
-      const usuario = await this.findById(id).populate('rol');
-      if (!usuario) {
-          throw new Error('Usuario no encontrado');
-      }
+      const options = { 
+          new: true, 
+          runValidators: true,
+          context: 'query'
+      };
       
-      // Verificar permisos en el modelo
-      const puedeEditar = await usuarioActual.rol.tienePermiso('desactivar_usuarios');
-      if (!puedeEditar) {
-          throw new Error('No tiene permisos para modificar este usuario');
+      const resultado = await this.findByIdAndUpdate(id, datosActualizados, options)
+          .populate('rol');
+          
+      if (!resultado) {
+          throw new Error(`Usuario con ID ${id} no encontrado`);
       }
-      
-      const resultado = await this.findByIdAndUpdate(
-          id,
-          datosActualizados,
-          { new: true, runValidators: true }
-      );
       
       return resultado;
   } catch (error) {
-      throw new Error(`Error al actualizar usuario: ${error.message}`);
+      console.error('Error en actualizarUsuario:', error);
+      throw new Error(`Error al actualizar: ${error.message}`);
   }
 };
 
@@ -271,6 +270,21 @@ usuarioSchema.statics.inicializarRoles = async function() {
       .exec();
   };
   
+usuarioSchema.statics.actualizarUsuario = async function(id, datosActualizados, usuarioActual) {
+  try {
+      const options = { 
+          new: true, 
+          runValidators: true,
+          context: 'query'
+      };
+      
+      return await this.findByIdAndUpdate(id, datosActualizados, options)
+          .populate('rol');
+  } catch (error) {
+      console.error('Error en actualizarUsuario:', error);
+      throw new Error(`Error al actualizar: ${error.message}`);
+  }
+};
 
 const Usuario = mongoose.model('Usuario', usuarioSchema);
 

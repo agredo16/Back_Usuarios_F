@@ -54,6 +54,18 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
             next(error);
         }
     });
+
+    router.put('/:id', autenticarMiddleware, (req, res, next) => {
+        // Si es el propio usuario (perfil propio)
+        if (req.usuario && req.usuario._id && req.usuario._id.toString() === req.params.id.toString()) {
+            return controller.actualizar(req, res, next);
+        }
+        
+        // Si no es perfil propio, verificar permisos adecuados
+        verificarPermisos(['editar_clientes', 'editar_laboratoristas'])(req, res, () => {
+            controller.actualizar(req, res, next);
+        });
+    });
     
 
     router.post('/solicitar-recuperacion', (req, res) => 
@@ -76,12 +88,7 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
             handler: 'obtenerPorId',
             permisos: ['ver_usuarios', 'perfil_propio'] 
         },
-        { 
-            path: '/:id', 
-            method: 'put', 
-            handler: 'actualizar',
-            permisos: ["editar_clientes","editar_laboratoristas", 'perfil_propio'] 
-        },
+      
         { 
             path: '/:id', 
             method: 'delete', 
@@ -105,7 +112,7 @@ module.exports = (autenticarMiddleware, usuarioModel) => {
     rutasAutenticadas.forEach(ruta => {
         router[ruta.method](ruta.path, autenticarMiddleware, (req, res, next) => {
             if (ruta.permisos.includes('perfil_propio') && req.params.id) {
-                if (req.usuario.userId.toString() === req.params.id.toString()) {
+                if (req.usuario && req.usuario.userId && req.usuario.userId.toString() === req.params.id.toString()) {  
                     return controller[ruta.handler](req, res, next);
                 }
             }

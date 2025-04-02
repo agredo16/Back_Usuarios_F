@@ -14,7 +14,7 @@ async function migrarRoles() {
     const roles = [
       {
         name: 'super_admin',
-        permisos: ['ver_usuarios', 'crear_administradores', 'desactivar_usuarios'],
+        permisos: ['ver_usuarios', 'crear_administradores', 'desactivar_usuarios','editar_administradores'],
         description: 'Permite realizar todas las acciones administrativas.'
       },
       {
@@ -26,7 +26,8 @@ async function migrarRoles() {
           'editar_laboratoristas',
           'gestionar_laboratoristas',
           'gestionar_clientes',
-          'crear_laboratoristas' 
+          'crear_laboratoristas',
+          'perfil_propio' 
         ],
         description: 'Gestiona usuarios y tiene acceso a la mayoría de funciones administrativas.'
       },

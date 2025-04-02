@@ -16,37 +16,44 @@ const autenticar = (usuarioModel) => async (req, res, next) => {
         }
 
         const decodificado = jwt.verify(token, config.jwtConfig.secret);
+        
         const usuario = await usuarioModel.findById(decodificado.userId)
             .populate('rol')
             .exec();
-            if (!usuario || !usuario.activo) {
-                return res.status(401).json({
-                    error: 'Usuario no autorizado',
-                    detalles: 'Usuario no encontrado o inactivo'
-                });
-            }
-            usuario.permisos = usuario.rol?.permisos || [];
-        req.usuario = usuario;
-        next();
-    }catch (error){
-        if (error.name === 'TokenExpiredError'){
-            return res.status(401).join({
-                error: 'Sesion expirada',
-                detalles: 'Por favor, inicie sesion nuevamente '
+
+        if (!usuario || !usuario.activo) {
+            return res.status(401).json({
+                error: 'Usuario no autorizado',
+                detalles: 'Usuario no encontrado o inactivo'
             });
         }
-        if (error.name ==='JsonWebTokenError'){
+        
+        // Asignar usuario y sus permisos a req
+        req.usuario = {
+            ...usuario.toObject(),
+            permisos: usuario.rol?.permisos || []
+        };
+        
+        next();
+    } catch (error) {
+        console.error("Error de autenticación:", error);
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ // Corregido de join a json
+                error: 'Sesión expirada',
+                detalles: 'Por favor, inicie sesión nuevamente'
+            });
+        }
+        if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({
-                error: 'Token invalido',
-                detalles: 'El token proporcionado no es valido'
+                error: 'Token inválido',
+                detalles: 'El token proporcionado no es válido'
             });
         }
         return res.status(401).json({
-            error: 'Error de autenticacion',
+            error: 'Error de autenticación',
             detalles: error.message
         });
     }
-  
 };
 
 const soloRoles = (rolesPermitidos = []) => {
@@ -57,7 +64,7 @@ const soloRoles = (rolesPermitidos = []) => {
                 return res.status(401).json({ error: 'Autenticación requerida' });
             }
 
-            if (usuario.rol === 'cliente') {
+            if (usuario.rol.name === 'cliente') {
                 return res.status(403).json({
                     error: 'Acceso denegado',
                     detalle: 'Los clientes no pueden iniciar sesión'

@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const Usuario = require('../models/Usuario');
 const emailService = require('../service/emailService');
 const config = require('../config/database');
@@ -220,92 +221,167 @@ class UsuarioController {
     }
 
     async obtenerPorId(req, res) {
-        try {
-            const usuario = await this.usuarioModel.obtenerPorId(req.params.id);
-            if (!usuario) {
-                return res.status(404).json({ error: 'Usuario no encontrado' });
-            }
-            const { password, ...usuarioSinPassword } = usuario;
-            res.status(200).json(usuarioSinPassword);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    }
-
-    async actualizar(req, res) {
       try {
-        const usuarioActualDB = await Usuario.findById(req.usuario.userId).populate('rol');
-        if (!usuarioActualDB) {
-            return res.status(401).json({
-                error: 'Usuario no autorizado',
-                detalles: 'Usuario no encontrado'
+          // Validar ObjectId primero
+          if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+              return res.status(400).json({ 
+                  error: 'ID inválido',
+                  detalles: 'El formato del ID no es válido'
+              });
+          }
+  
+          // Obtener usuario con populate y convertir a objeto plano
+          const usuario = await this.usuarioModel.obtenerPorId(req.params.id)
+              .then(u => u?.populate('rol'))
+              .then(u => u?.toObject()) || null;
+  
+          if (!usuario) {
+              return res.status(404).json({ 
+                  error: 'Usuario no encontrado',
+                  detalles: `No existe usuario con ID ${req.params.id}`
+              });
+          }
+  
+          // Eliminar campos sensibles y formatear respuesta
+          const { password, tokenRecuperacion, __v, ...usuarioSeguro } = usuario;
+          
+          // Asegurar estructura consistente del rol
+          if (usuarioSeguro.rol && typeof usuarioSeguro.rol === 'object') {
+              usuarioSeguro.rol = {
+                  id: usuarioSeguro.rol._id,
+                  nombre: usuarioSeguro.rol.name,
+                  permisos: usuarioSeguro.rol.permisos || []
+              };
+          }
+  
+          res.status(200).json(usuarioSeguro);
+      } catch (error) {
+          console.error(`Error al obtener usuario ${req.params.id}:`, error);
+          res.status(500).json({ 
+              error: 'Error interno del servidor',
+              detalles: process.env.NODE_ENV === 'development' 
+                  ? error.message 
+                  : 'Por favor contacte al administrador'
+          });
+      }
+  }
+
+  async actualizar(req, res) {
+    try {
+        const id = req.params.id;
+        
+        // Validación de ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ 
+                error: 'ID inválido',
+                detalles: 'El formato del ID no es válido'
             });
         }
 
-        const usuarioObjetivo = await this.usuarioModel.findById(req.params.id).populate('rol');
-        if (!usuarioObjetivo) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
+        // Verificar si el usuario existe
+        const usuarioExiste = await Usuario.exists({ _id: id });
+        if (!usuarioExiste) {
+            return res.status(404).json({ 
+                error: 'Usuario no encontrado',
+                detalles: `El usuario con ID ${id} no existe`
+            });
         }
 
-        // Verificar permisos
-        const miRol = usuarioActualDB.rol.name.toLowerCase();
+        // Obtener usuario autenticado y usuario objetivo
+        const usuarioActual = req.usuario; // El middleware ya asigna el usuario completo
+        const usuarioObjetivo = await Usuario.findById(id).populate('rol').lean();
+
+        // Validar permisos de edición
+        const miRol = usuarioActual.rol.name.toLowerCase();
         const rolObjetivo = usuarioObjetivo.rol.name.toLowerCase();
+        
+        // Lógica de verificación de permisos (simplificada)
+        if (miRol === 'super_admin' && rolObjetivo !== 'administrador') {
+            return res.status(403).json({
+                error: 'Acceso denegado',
+                detalles: 'Super admin solo puede editar administradores'
+            });
+        }
 
-        if (miRol === 'super_admin'){
-          if (rolObjetivo !== 'administrador'){
+        if (miRol === 'administrador' && !['cliente', 'laboratorista'].includes(rolObjetivo)) {
             return res.status(403).json({
-              error: 'Acceso denegado',
-              detalles: 'El super administrador solo puede editar administradores'
+                error: 'Acceso denegado',
+                detalles: 'Administradores solo pueden editar clientes y laboratoristas'
             });
-          }
-        } else if (miRol === 'administrador'){
-          if (!['cliente','laboratorista'].includes(rolObjetivo)){
-            return res.status(403).json({
-              error: 'Acceso denegado',
-              detalles: 'El administrador solo puede editar clientes y laboratoristas'
-            });
-          }
-          }else {
-            return res.status(403).json({
-              error: 'Acceso denegado',
-              detalles: 'No tiene permisos para modificar este usuario'
-            });
-          }
+        }
 
+        // Preparar datos para actualización
         const { password, ...datosActualizados } = req.body;
+        
         if (password) {
+            if (!this.validarFortalezaContraseña(password)) {
+                return res.status(400).json({
+                    error: 'Contraseña débil',
+                    detalles: 'La contraseña debe tener al menos 8 caracteres, incluyendo mayúsculas, números y caracteres especiales'
+                });
+            }
             datosActualizados.password = await bcrypt.hash(password, 10);
         }
 
-        const resultado = await this.usuarioModel.actualizarUsuario(
-            req.params.id,
+        // Realizar actualización
+        const resultado = await Usuario.findByIdAndUpdate(
+            id,
             datosActualizados,
-            req.usuario
+            { 
+                new: true,
+                runValidators: true,
+                populate: {
+                    path: 'rol',
+                    select: '_id name permisos'
+                }
+            }
         );
 
-        const usuarioActualizado = await this.usuarioModel.findById(resultado._id).populate('rol');
+        if (!resultado) {
+            return res.status(500).json({
+                error: 'Error interno',
+                detalles: 'No se pudo actualizar el usuario'
+            });
+        }
 
-        res.status(200).json({
+        // Formatear respuesta
+        const respuesta = {
+            _id: resultado._id,
+            email: resultado.email,
+            nombre: resultado.nombre,
+            documento: resultado.documento,
+            telefono: resultado.telefono,
+            direccion: resultado.direccion,
+            activo: resultado.activo,
+            rol: {
+                id: resultado.rol._id,
+                nombre: resultado.rol.name,
+                permisos: resultado.rol.permisos || []
+            },
+            detalles: resultado.detalles,
+            fechaActualizacion: resultado.fechaActualizacion
+        };
+
+        return res.status(200).json({
             mensaje: 'Usuario actualizado exitosamente',
-            usuario: {
-                _id: usuarioActualizado._id,
-                email: usuarioActualizado.email,
-                nombre: usuarioActualizado.nombre,
-                documento:usuarioActualizado.documento,
-                telefono: usuarioActualizado.telefono,
-                tipo: usuarioActualizado.rol.name,
-                rol: {
-                    id: usuarioActualizado.rol._id,
-                    nombre: usuarioActualizado.rol.name
-                },
-                activo: usuarioActualizado.activo
-            }
+            usuario: respuesta
         });
+
     } catch (error) {
-        console.error('Error en la actualización:', error);
-        res.status(500).json({
-            error: 'Error en el servidor',
-            detalles: error.message
+        console.error('Error en actualización:', error);
+        
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({
+                error: 'Error de validación',
+                detalles: error.message
+            });
+        }
+
+        return res.status(500).json({
+            error: 'Error interno del servidor',
+            detalles: process.env.NODE_ENV === 'development' 
+                ? error.message 
+                : 'Por favor contacte al administrador'
         });
     }
 }
